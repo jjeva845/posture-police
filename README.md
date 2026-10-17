@@ -9,7 +9,7 @@ cd posture
 node server.mjs        # → http://localhost:4322
 ```
 
-Needs Chrome or Safari, a webcam, and nothing else. The pose model and WASM runtime are vendored in `public/`, so it works offline.
+Needs Chrome or Safari, a webcam, and nothing else. The pose model and WASM runtime are vendored in `docs/`, so it works offline.
 
 ## Using it
 

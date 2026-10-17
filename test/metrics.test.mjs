@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractFeatures, medianFeatures, evaluate, ema } from "../public/metrics.js";
+import { extractFeatures, medianFeatures, evaluate, ema } from "../docs/metrics.js";
 
 const ASPECT = 16 / 9;
 

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "docs");
 const PORT = Number(process.env.PORT || 4322);
 
 const MIME = {
