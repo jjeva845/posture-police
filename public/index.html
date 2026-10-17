@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Posture Police — your webcam has opinions</title>
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%230c0d0e'/><path d='M20 7v26' stroke='%23ff9f43' stroke-width='5' stroke-linecap='round'/><path d='M14 12h12M14 20h12M14 28h12' stroke='%23e8ece9' stroke-width='2.4' stroke-linecap='round'/></svg>" />
+  </head>
+  <body>
+    <div class="stripe" aria-hidden="true"></div>
+    <div class="alarm" id="alarm" aria-hidden="true"></div>
+
+    <header class="top">      <div class="brand">
+        <div class="brand-text">
+          <h1>Posture <em>Police</em></h1>
+          <p>Precinct 27 · webcam division</p>
+        </div>
+      </div>
+
+      <div class="top-right">
+        <div class="status" id="status">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="statusText">off duty</span>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="start">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span id="startText">Start camera</span>
+          </button>
+          <button class="btn" id="calibrate" disabled>Re-calibrate</button>
+          <button class="btn" id="report" disabled>Report</button>
+          <button class="btn" id="present" title="Presentation mode (F)" aria-pressed="false">Present</button>
+          <button class="btn icon" id="sound" aria-pressed="true" title="Sound (M)" aria-label="Toggle sound">
+            <svg class="i-on" viewBox="0 0 24 24" width="17" height="17"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg class="i-off" viewBox="0 0 24 24" width="17" height="17" hidden><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button class="btn icon" id="settingsBtn" title="Settings (S)" aria-label="Settings">
+            <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="cam" aria-label="Camera">
+        <div class="stage" id="stage">
+          <video id="video" playsinline muted autoplay></video>
+          <canvas id="overlay"></canvas>
+
+          <div class="idle" id="idle">
+            <div class="idle-steps">
+              <div class="step">
+                <span class="step-n">1</span>
+                <span>Allow the camera</span>
+              </div>
+              <div class="step">
+                <span class="step-n">2</span>
+                <span>Sit up straight for 3s</span>
+              </div>
+              <div class="step">
+                <span class="step-n">3</span>
+                <span>Try to slouch. Good luck.</span>
+              </div>
+            </div>
+            <h3 id="idleTitle">Camera off</h3>
+            <p id="idleText">It learns what good posture looks like on you, then holds you to it. Everything runs on this laptop — no frames are uploaded or recorded.</p>
+          </div>
+
+          <div class="calib" id="calib" hidden>
+            <div class="calib-ring">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ring-bg" cx="60" cy="60" r="52" />
+                <circle class="ring-fg" id="ring" cx="60" cy="60" r="52" pathLength="100" />
+              </svg>
+              <span class="cd-num" id="cdNum">3</span>
+            </div>
+            <p class="cd-text" id="cdText">Sit up straight. This is your baseline.</p>
+            <p class="cd-hint" id="cdHint">head and both shoulders in frame</p>
+          </div>
+
+          <div class="brackets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+          <div class="stamp" id="stamp" hidden>SIT UP</div>
+
+          <div class="hud">
+            <span class="chip" id="phaseChip">off duty</span>
+            <span class="chip dim" id="fpsChip"></span>
+          </div>
+        </div>
+
+        <div class="under">
+          <span class="lock">Local only</span>
+          <span>Nothing is uploaded, recorded, or stored.</span>
+        </div>
+
+        <div class="timeline-card">
+          <div class="timeline-head">
+            <span class="micro">session timeline</span>
+            <span class="micro" id="tlTime">0:00</span>
+          </div>
+          <canvas id="timeline" width="1280" height="48"></canvas>
+        </div>
+      </section>
+
+      <aside class="dash" aria-label="Dashboard">
+        <div class="hero" id="hero">
+          <div class="hero-top">
+            <span class="micro" id="heroState">standing by</span>
+            <span class="micro" id="heroStrain"></span>
+          </div>
+
+          <div class="gauge">
+            <div class="gauge-read">
+              <span class="score" id="score">--</span>
+              <span class="score-max">/100</span>
+            </div>
+            <div class="scale" aria-hidden="true">
+              <div class="scale-ticks"></div>
+              <div class="scale-track">
+                <div class="scale-fill" id="arc"></div>
+                <div class="scale-mark"></div>
+              </div>
+              <div class="scale-labels"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+            </div>
+          </div>
+
+          <p class="verdict" id="verdict">Waiting for you to sit down</p>
+
+          <div class="meters">
+            <div class="meter" id="meterNeck">
+              <span class="m-label">neck</span>
+              <span class="m-track"><i></i></span>
+              <span class="m-val">—</span>
+            </div>
+            <div class="meter" id="meterLean">
+              <span class="m-label">lean</span>
+              <span class="m-track"><i></i></span>
+              <span class="m-val">—</span>
+            </div>
+            <div class="meter" id="meterTilt">
+              <span class="m-label">tilt</span>
+              <span class="m-track"><i></i></span>
+              <span class="m-val">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tickets-card">
+          <div class="tickets-head">
+            <span class="micro">citations</span>
+            <span class="micro fines" id="fineTotal">$0 owed</span>
+          </div>
+          <div class="tickets" id="tickets">
+            <div class="tickets-empty">
+              <span aria-hidden="true">✓</span>
+              <p>No citations yet. Keep it that way.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-v" id="statGood">--</span>
+            <span class="stat-k">good posture</span>
+          </div>
+          <div class="stat">
+            <span class="stat-v" id="statStreak">0s</span>
+            <span class="stat-k">current streak</span>
+          </div>
+          <div class="stat">
+            <span class="stat-v" id="statBest">0s</span>
+            <span class="stat-k">best streak</span>
+          </div>
+          <div class="stat">
+            <span class="stat-v" id="statCount">0</span>
+            <span class="stat-k">citations</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="foot">
+      <span>Pose landmarks: MediaPipe · geometry: ours · patience: yours</span>
+      <span class="micro" id="modelTag">pose model: loading…</span>
+    </footer>
+
+    <!-- settings -->
+    <div class="scrim" id="scrim" hidden></div>
+
+    <aside class="drawer" id="drawer" hidden aria-label="Settings">
+      <div class="drawer-head">
+        <h2>Settings</h2>
+        <button class="btn icon" id="closeSettings" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span>Strictness</span>
+          <b id="sensLabel">normal</b>
+        </div>
+        <input type="range" id="sens" min="0.6" max="1.9" step="0.05" value="1" />
+        <div class="field-foot"><span>chill</span><span>strict</span></div>
+      </div>
+
+      <label class="switch">
+        <span>
+          <b>Voice</b>
+          <em>It says something rude when you slouch</em>
+        </span>
+        <input type="checkbox" id="voiceToggle" checked />
+      </label>
+
+      <label class="switch">
+        <span>
+          <b>Alert sounds</b>
+          <em>Two-tone siren and a rubber stamp</em>
+        </span>
+        <input type="checkbox" id="soundToggle" checked />
+      </label>
+
+      <label class="switch">
+        <span>
+          <b>Show the numbers</b>
+          <em>Every ratio, live, against your baseline</em>
+        </span>
+        <input type="checkbox" id="numbersToggle" />
+      </label>
+
+      <div class="why" id="why" hidden>
+        <div class="why-grid" id="whyGrid"></div>
+        <p class="why-note">Each ratio is divided by shoulder width, so distance from the camera cancels out. Your baseline is the median of your three calibration seconds.</p>
+      </div>
+
+      <button class="btn wide" id="resetStats">Reset this session</button>
+    </aside>
+
+    <!-- report -->
+    <div class="modal-wrap" id="reportModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+        <div class="modal-head">
+          <div>
+            <span class="micro" id="reportRange">session report</span>
+            <h2 id="reportTitle">How you sat</h2>
+          </div>
+          <button class="btn icon" id="closeReport" aria-label="Close report">✕</button>
+        </div>
+
+        <div class="report-hero">
+          <div class="grade" id="gradeLetter">A</div>
+          <div class="report-summary">
+            <b id="gradeNote">Solid session</b>
+            <span id="reportGood">0% good posture</span>
+          </div>
+        </div>
+
+        <div class="report-grid" id="reportGrid"></div>
+
+        <div class="report-actions">
+          <button class="btn primary" id="saveCard">Save share card</button>
+          <button class="btn" id="closeReport2">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
